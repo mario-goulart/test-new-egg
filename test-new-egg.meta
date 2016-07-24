@@ -1,0 +1,7 @@
+;; -*- scheme -*-
+
+((synopsis "A tool to test new eggs before they are added to the official CHICKEN repository")
+ (author "Mario Domenech Goulart")
+ (category tools)
+ (license "BSD")
+ (depends henrietta-cache salmonella))

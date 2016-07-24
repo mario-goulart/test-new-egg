@@ -1,0 +1,8 @@
+;; -*- scheme -*-
+
+(compile -d0 -O3 test-new-egg.scm)
+
+(install-program
+ 'test-new-egg
+ '("test-new-egg")
+ '((version "0.0.1")))
