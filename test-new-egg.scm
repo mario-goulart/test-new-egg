@@ -13,16 +13,10 @@
     (when exit-code
       (exit exit-code))))
 
-(define (die! fmt . args)
-  (apply fprintf (append (list (current-error-port)
-                               (string-append fmt "\n"))
-                         args))
-  (exit 1))
-
 (define (info fmt . args)
   (apply printf (cons (string-append fmt "\n") args)))
 
-(define (salmonella-error message)
+(define (raise-error message)
   (abort (make-property-condition 'exn 'message message)))
 
 (define (test-egg egg-location-uri tmp-dir)
@@ -40,7 +34,7 @@
     (let ((versions (sort (directory (make-pathname tmp-dir egg-name))
                           version>=?)))
       (when (null? versions)
-        (die! "Could not find any version for ~a." egg-name))
+        (raise-error (sprintf "Could not find any version for ~a." egg-name)))
 
       (let ((latest-version (car versions)))
         (info "Running salmonella on ~a version ~a..." egg-name latest-version)
@@ -48,16 +42,16 @@
                                          latest-version))
         (system* "salmonella")
         (unless (file-exists? "salmonella.log")
-          (salmonella-error "salmonella.log not found"))
+          (raise-error "salmonella.log not found"))
         (let ((salmonella-log (read-log-file "salmonella.log"))
               (egg (string->symbol egg-name))
               (status-zero? (lambda (status) ;; not available in old salmonellas
                               (and status (zero? status)))))
           (unless (status-zero? (install-status egg salmonella-log))
-            (salmonella-error "Installation failed."))
+            (raise-error "Installation failed."))
           (when (and (has-test? egg salmonella-log)
                      (not (status-zero? (test-status egg salmonella-log))))
-            (salmonella-error "Tests failed.")))))))
+            (raise-error "Tests failed.")))))))
 
 (define (main args)
   (when (null? args)
