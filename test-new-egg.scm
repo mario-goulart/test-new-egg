@@ -1,8 +1,46 @@
 (module test-new-egg ()
 
-(import chicken scheme)
-(use data-structures extras files posix setup-api utils)
-(use salmonella-log-parser)
+(import scheme)
+(cond-expand
+ (chicken-4
+  (import chicken)
+  (use data-structures extras files posix setup-api utils)
+  (use salmonella-log-parser))
+ (chicken-5
+  (import (chicken base)
+          (chicken condition)
+          (chicken file)
+          (chicken format)
+          (chicken irregex)
+          (chicken pathname)
+          (chicken pretty-print)
+          (chicken process)
+          (chicken process-context)
+          (chicken sort)
+          (chicken string))
+  (import salmonella-log-parser)
+
+  ;; From setup-api (chicken-4.13.0)
+  (define (version>=? v1 v2)
+    (define (version->list v)
+      (map (lambda (x) (or (string->number x) x))
+           (irregex-split "[-\\._]" (->string v))))
+    (let loop ((p1 (version->list v1))
+               (p2 (version->list v2)))
+      (cond ((null? p1) (null? p2))
+            ((null? p2))
+            ((number? (car p1))
+             (and (number? (car p2))
+                  (or (> (car p1) (car p2))
+                      (and (= (car p1) (car p2))
+                           (loop (cdr p1) (cdr p2))))))
+            ((number? (car p2)))
+            ((string>? (car p1) (car p2)))
+            (else
+             (and (string=? (car p1) (car p2))
+                  (loop (cdr p1) (cdr p2))))))))
+ (else
+  (error "Unsupported CHICKEN version.")))
 
 (define (usage #!optional exit-code)
   (let ((port (if (and exit-code (not (zero? exit-code)))
@@ -28,7 +66,7 @@
       (cut pp `(,(string->symbol egg-name) ,egg-location-uri)))
 
     (info "Running henrietta-cache...")
-    (system* "henrietta-cache -c ~a -e ~a" tmp-dir egg-locations)
+    (system (sprintf "henrietta-cache -c ~a -e ~a" tmp-dir egg-locations))
 
     (info "Finding out the latest version for ~a..." egg-name)
     (let ((versions (sort (directory (make-pathname tmp-dir egg-name))
