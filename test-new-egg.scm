@@ -3,13 +3,14 @@
 (import scheme)
 (cond-expand
  (chicken-4
-  (import chicken)
+  (import chicken foreign)
   (use data-structures extras files posix setup-api utils)
   (use salmonella-log-parser))
  (chicken-5
   (import (chicken base)
           (chicken condition)
           (chicken file)
+          (chicken foreign)
           (chicken format)
           (chicken irregex)
           (chicken pathname)
@@ -58,15 +59,17 @@
   (abort (make-property-condition 'exn 'message message)))
 
 (define (test-egg egg-location-uri tmp-dir)
-  (let ((egg-locations (make-pathname tmp-dir "egg-locations"))
-        (egg-name (pathname-file egg-location-uri)))
+  (let* ((egg-locations (make-pathname tmp-dir "egg-locations"))
+         (egg-name (pathname-file egg-location-uri))
+         (bin-prefix (foreign-value "C_TARGET_BIN_HOME" c-string))
+         (henrietta-cache (make-pathname bin-prefix "henrietta-cache")))
 
     (info "Writing egg-locations for ~a to ~a..." egg-name egg-locations)
     (with-output-to-file egg-locations
       (cut pp `(,(string->symbol egg-name) ,egg-location-uri)))
 
     (info "Running henrietta-cache...")
-    (system (sprintf "henrietta-cache -c ~a -e ~a" tmp-dir egg-locations))
+    (system* (sprintf "~a -c ~a -e ~a" henrietta-cache tmp-dir egg-locations))
 
     (info "Finding out the latest version for ~a..." egg-name)
     (let ((versions (sort (directory (make-pathname tmp-dir egg-name))
@@ -74,11 +77,12 @@
       (when (null? versions)
         (raise-error (sprintf "Could not find any version for ~a." egg-name)))
 
-      (let ((latest-version (car versions)))
+      (let ((latest-version (car versions))
+            (salmonella (make-pathname bin-prefix "salmonella")))
         (info "Running salmonella on ~a version ~a..." egg-name latest-version)
         (change-directory (make-pathname (list tmp-dir egg-name)
                                          latest-version))
-        (system* "salmonella")
+        (system* salmonella)
         (unless (file-exists? "salmonella.log")
           (raise-error "salmonella.log not found"))
         (let ((salmonella-log (read-log-file "salmonella.log"))
