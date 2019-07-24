@@ -48,7 +48,7 @@
                   (current-error-port)
                   (current-output-port)))
         (this (pathname-strip-directory (program-name))))
-    (fprintf port "Usage: ~a <.release-info URI>\n" this)
+    (fprintf port "Usage: ~a <egg name> <.release-info URI>\n" this)
     (when exit-code
       (exit exit-code))))
 
@@ -58,9 +58,8 @@
 (define (raise-error message)
   (abort (make-property-condition 'exn 'message message)))
 
-(define (test-egg egg-location-uri tmp-dir)
+(define (test-egg egg-name egg-location-uri tmp-dir)
   (let* ((egg-locations (make-pathname tmp-dir "egg-locations"))
-         (egg-name (pathname-file egg-location-uri))
          (bin-prefix (foreign-value "C_TARGET_BIN_HOME" c-string))
          (henrietta-cache (make-pathname bin-prefix "henrietta-cache")))
 
@@ -96,9 +95,10 @@
             (raise-error "Tests failed.")))))))
 
 (define (main args)
-  (when (null? args)
+  (when (or (null? args) (null? (cdr args)))
     (usage 1))
-  (let ((egg-location-uri (car args))
+  (let ((egg-name (car args))
+        (egg-location-uri (cadr args))
         (tmp-dir (create-temporary-directory)))
     (handle-exceptions exn
       (info
@@ -107,7 +107,7 @@
         "debug something, since something went wrong while installing/testing "
         "the egg.")
        tmp-dir)
-      (test-egg egg-location-uri tmp-dir)
+      (test-egg egg-name egg-location-uri tmp-dir)
       (info "Removing ~a" tmp-dir)
       (delete-directory tmp-dir 'recursively)
       (info "Egg looks ok!"))))
