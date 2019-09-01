@@ -5,7 +5,8 @@
  (chicken-4
   (import chicken foreign)
   (use data-structures extras files posix setup-api utils)
-  (use salmonella-log-parser))
+  (use salmonella-log-parser)
+  (define chicken-major-version 4))
  (chicken-5
   (import (chicken base)
           (chicken condition)
@@ -39,7 +40,9 @@
             ((string>? (car p1) (car p2)))
             (else
              (and (string=? (car p1) (car p2))
-                  (loop (cdr p1) (cdr p2))))))))
+                  (loop (cdr p1) (cdr p2)))))))
+
+  (define chicken-major-version 5))
  (else
   (error "Unsupported CHICKEN version.")))
 
@@ -68,7 +71,11 @@
       (cut pp `(,(string->symbol egg-name) ,egg-location-uri)))
 
     (info "Running henrietta-cache...")
-    (system* (sprintf "~a -c ~a -e ~a" henrietta-cache tmp-dir egg-locations))
+    (system* (sprintf "~a -c ~a -e ~a -r ~a"
+                      henrietta-cache
+                      tmp-dir
+                      egg-locations
+                      chicken-major-version))
 
     (info "Finding out the latest version for ~a..." egg-name)
     (let ((versions (sort (directory (make-pathname tmp-dir egg-name))
