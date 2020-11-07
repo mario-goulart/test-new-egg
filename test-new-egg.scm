@@ -64,13 +64,15 @@
 (define (test-egg egg-name egg-location-uri tmp-dir)
   (let* ((egg-locations (make-pathname tmp-dir "egg-locations"))
          (bin-prefix (foreign-value "C_TARGET_BIN_HOME" c-string))
-         (henrietta-cache (make-pathname bin-prefix "henrietta-cache")))
+         (henrietta-cache
+          (or (get-environment-variable "TEST_NEW_EGG_HENRIETTA_CACHE")
+              (make-pathname bin-prefix "henrietta-cache"))))
 
     (info "Writing egg-locations for ~a to ~a..." egg-name egg-locations)
     (with-output-to-file egg-locations
       (cut pp `(,(string->symbol egg-name) ,egg-location-uri)))
 
-    (info "Running henrietta-cache...")
+    (info "Running ~a..." henrietta-cache)
     (system* (sprintf "~a -c ~a -e ~a -r ~a"
                       henrietta-cache
                       tmp-dir
@@ -84,8 +86,10 @@
         (raise-error (sprintf "Could not find any version for ~a." egg-name)))
 
       (let ((latest-version (car versions))
-            (salmonella (make-pathname bin-prefix "salmonella")))
-        (info "Running salmonella on ~a version ~a..." egg-name latest-version)
+            (salmonella
+             (or (get-environment-variable "TEST_NEW_EGG_SALMONELLA")
+                 (make-pathname bin-prefix "salmonella"))))
+        (info "Running ~a on ~a version ~a..." salmonella egg-name latest-version)
         (change-directory (make-pathname (list tmp-dir egg-name)
                                          latest-version))
         (system* salmonella)
