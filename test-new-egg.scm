@@ -48,12 +48,15 @@
  (else
   (error "Unsupported CHICKEN version.")))
 
+(define version "1.0.2")
+
 (define (usage #!optional exit-code)
   (let ((port (if (and exit-code (not (zero? exit-code)))
                   (current-error-port)
                   (current-output-port)))
         (this (pathname-strip-directory (program-name))))
     (fprintf port "Usage: ~a <egg name> <.release-info URI>\n" this)
+    (fprintf port "       ~a [-h|-help|--help|--version]\n" this)
     (when exit-code
       (exit exit-code))))
 
@@ -111,8 +114,19 @@
             (raise-error "Tests failed.")))))))
 
 (define (main args)
-  (when (or (null? args) (null? (cdr args)))
+  (when (null? args)
     (usage 1))
+
+  (when (member (car args) '("-h" "-help" "--help"))
+    (usage 0))
+
+  (when (equal? (car args) "--version")
+    (print version)
+    (exit 0))
+
+  (when (null? (cdr args))
+    (usage 1))
+
   (let ((egg-name (car args))
         (egg-location-uri (cadr args))
         (tmp-dir (create-temporary-directory)))
