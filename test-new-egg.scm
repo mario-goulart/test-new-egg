@@ -6,7 +6,8 @@
   (import chicken foreign)
   (use data-structures extras files posix setup-api utils)
   (use salmonella-log-parser)
-  (define chicken-major-version 4))
+  (define chicken-major-version 4)
+  (define egg-file-extension ".setup"))
  (chicken-5
   (import (chicken base)
           (chicken condition)
@@ -42,7 +43,8 @@
              (and (string=? (car p1) (car p2))
                   (loop (cdr p1) (cdr p2)))))))
 
-  (define chicken-major-version 5))
+  (define chicken-major-version 5)
+  (define egg-file-extension ".egg"))
  (else
   (error "Unsupported CHICKEN version.")))
 
@@ -88,10 +90,13 @@
       (let ((latest-version (car versions))
             (salmonella
              (or (get-environment-variable "TEST_NEW_EGG_SALMONELLA")
-                 (make-pathname bin-prefix "salmonella"))))
+                 (make-pathname bin-prefix "salmonella")))
+            (egg-filename (string-append egg-name egg-file-extension)))
         (info "Running ~a on ~a version ~a..." salmonella egg-name latest-version)
         (change-directory (make-pathname (list tmp-dir egg-name)
                                          latest-version))
+        (unless (file-exists? egg-filename)
+          (raise-error (sprintf "Could not find ~a" egg-filename)))
         (system* salmonella)
         (unless (file-exists? "salmonella.log")
           (raise-error "salmonella.log not found"))
