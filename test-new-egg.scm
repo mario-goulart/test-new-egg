@@ -48,7 +48,7 @@
  (else
   (error "Unsupported CHICKEN version.")))
 
-(define version "1.0.2")
+(define version "1.0.3")
 
 (define (usage #!optional exit-code)
   (let ((port (if (and exit-code (not (zero? exit-code)))
