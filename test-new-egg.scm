@@ -4,7 +4,7 @@
 (cond-expand
  (chicken-4
   (import chicken foreign)
-  (use data-structures extras files posix setup-api utils)
+  (use data-structures extras files posix setup-api utils srfi-1)
   (use salmonella-log-parser)
   (define chicken-major-version 4)
   (define egg-file-extension ".setup"))
@@ -21,7 +21,7 @@
           (chicken process-context)
           (chicken sort)
           (chicken string))
-  (import salmonella-log-parser)
+  (import salmonella-log-parser srfi-1)
 
   ;; From setup-api (chicken-4.13.0)
   (define (version>=? v1 v2)
@@ -113,6 +113,16 @@
                      (not (status-zero? (test-status egg salmonella-log))))
             (raise-error "Tests failed.")))))))
 
+;; From henrietta.  If you modify this code, please also change it in
+;; henrietta.
+(define illegal-name?
+  (let ((legal-chars
+         (string->list
+          "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_")))
+    (lambda (name)
+      (not (every (cut member <> legal-chars)
+                  (string->list name))))))
+
 (define (main args)
   (when (null? args)
     (usage 1))
@@ -130,6 +140,17 @@
   (let ((egg-name (car args))
         (egg-location-uri (cadr args))
         (tmp-dir (create-temporary-directory)))
+
+    (when (illegal-name? egg-name)
+      (fprintf
+       (current-error-port)
+       (string-append
+        "~a: invalid egg name.  See "
+        "http://wiki.call-cc.org/eggs%20tutorial#naming-your-extension "
+        "for egg naming rules.\n")
+       egg-name)
+      (exit 1))
+
     (handle-exceptions exn
       (info
        (string-append

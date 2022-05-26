@@ -7,7 +7,8 @@
  (category tools)
  (dependencies
   henrietta-cache
-  salmonella)
+  salmonella
+  srfi-1)
  (component-options
   (csc-options "-O3" "-d0"))
  (components
