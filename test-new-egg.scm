@@ -8,7 +8,7 @@
   (use salmonella-log-parser)
   (define chicken-major-version 4)
   (define egg-file-extension ".setup"))
- (chicken-5
+ ((or chicken-5 chicken-6)
   (import (chicken base)
           (chicken condition)
           (chicken file)
@@ -43,7 +43,11 @@
              (and (string=? (car p1) (car p2))
                   (loop (cdr p1) (cdr p2)))))))
 
-  (define chicken-major-version 5)
+  (define chicken-major-version
+    (cond-expand
+     (chicken-5 5)
+     (chicken-6 6)))
+
   (define egg-file-extension ".egg"))
  (else
   (error "Unsupported CHICKEN version.")))
