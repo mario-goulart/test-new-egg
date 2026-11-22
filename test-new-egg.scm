@@ -82,7 +82,12 @@
       (cut pp `(,(string->symbol egg-name) ,egg-location-uri)))
 
     (info "Running ~a..." henrietta-cache)
-    (system* (sprintf "~a -c ~a -e ~a -r ~a"
+    ;; Use `-L 8192' to cope with GitHub's very long
+    ;; `content-security-policy' header, which exceeds http-client's
+    ;; default HTTP line limit (4096 -- see intarweb's
+    ;; `http-line-limit'), causing "Max allowed line length exceeded"
+    ;; errors.
+    (system* (sprintf "~a -L 8192 -c ~a -e ~a -r ~a"
                       henrietta-cache
                       tmp-dir
                       egg-locations
